@@ -13,11 +13,6 @@ variable "db_instance_class" {
   type        = string
 }
 
-variable "my_key_name" {
-  description = "The name of the ssh key pair"
-  type        = string
-}
-
 variable "hosted_zone_name" {
   description = "The zone ID of my doormat hosted route53 zone"
   type        = string

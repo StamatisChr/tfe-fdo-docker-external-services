@@ -25,3 +25,7 @@ data "aws_route53_zone" "my_aws_dns_zone" {
   name = var.hosted_zone_name
 
 }
+
+data "aws_iam_policy" "SecurityComputeAccess" {
+  name = "SecurityComputeAccess"
+}
