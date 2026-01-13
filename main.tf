@@ -13,6 +13,7 @@ resource "aws_instance" "tfe_docker_instance" {
 
   user_data = templatefile("./templates/user_data_cloud_init.tftpl", {
     tfe_host_path_to_certificates  = var.tfe_host_path_to_certificates
+    tfe_host_path_to_scripts       = var.tfe_host_path_to_scripts
     tfe_license                    = var.tfe_license
     tfe_version_image              = var.tfe_version_image
     tfe_hostname                   = "${var.tfe_dns_record}-${random_pet.hostname_suffix.id}.${var.hosted_zone_name}"
@@ -28,6 +29,10 @@ resource "aws_instance" "tfe_docker_instance" {
     tfe_database_host              = aws_db_instance.tfe_postgres.endpoint
     aws_region                     = var.aws_region
     tfe_object_storage_bucket_name = aws_s3_bucket.tfe_bucket.id
+    admin_email                   = var.admin_email
+    admin_username                = var.admin_username
+    admin_password                = var.admin_password
+    oauth_token                   = var.oauth_token    
   })
 
   ebs_optimized = true
@@ -76,13 +81,13 @@ resource "aws_vpc_security_group_ingress_rule" "port_80_http" {
   to_port           = 80
 }
 
-# resource "aws_vpc_security_group_ingress_rule" "port_22_ssh" {
-#   security_group_id = aws_security_group.tfe_sg.id
-#   cidr_ipv4         = "0.0.0.0/0"
-#   from_port         = 22
-#   ip_protocol       = "tcp"
-#   to_port           = 22
-# }
+resource "aws_vpc_security_group_ingress_rule" "port_8443_admin_https" {
+  security_group_id = aws_security_group.tfe_sg.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 8443
+  ip_protocol       = "tcp"
+  to_port           = 8443
+}
 
 resource "aws_vpc_security_group_ingress_rule" "port_5432_postgres" {
   security_group_id = aws_security_group.tfe_sg.id
@@ -98,62 +103,6 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_outbound_traffic_ipv4" 
   ip_protocol       = "-1"
 }
 
-# DNS 
-resource "aws_route53_record" "tfe-a-record" {
-  zone_id = data.aws_route53_zone.my_aws_dns_zone.id
-  name    = "${var.tfe_dns_record}-${random_pet.hostname_suffix.id}.${var.hosted_zone_name}"
-  type    = "A"
-  ttl     = 120
-  records = [aws_eip.tfe_eip.public_ip]
-}
-
-# RDS instance 
-resource "aws_db_instance" "tfe_postgres" {
-  identifier             = "tfe-postgres"
-  engine                 = "postgres"
-  engine_version         = "14.16"
-  instance_class         = var.db_instance_class
-  allocated_storage      = 50
-  storage_type           = "gp3"
-  username               = var.tfe_database_user
-  db_name                = var.tfe_database_name
-  password               = var.tfe_database_password
-  vpc_security_group_ids = [aws_security_group.tfe_sg.id]
-  skip_final_snapshot    = true
-  deletion_protection    = false
-
-  tags = {
-    Name = "stam-${random_pet.hostname_suffix.id}"
-  }
-}
-
-
-# S3 Bucket
-resource "aws_s3_bucket" "tfe_bucket" {
-  bucket        = "tfe-data-bucket-${random_pet.hostname_suffix.id}"
-  force_destroy = true
-
-  tags = {
-    Name = "stam-${random_pet.hostname_suffix.id}"
-  }
-}
-
-resource "aws_s3_bucket_public_access_block" "tfe_bucket_access" {
-  bucket = aws_s3_bucket.tfe_bucket.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-
-}
-
-resource "aws_s3_bucket_versioning" "versioning_example" {
-  bucket = aws_s3_bucket.tfe_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
 
 # IAM Role for EC2 to access S3 
 resource "aws_iam_role" "ec2_s3_access" {

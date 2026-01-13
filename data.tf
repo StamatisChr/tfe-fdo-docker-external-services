@@ -18,6 +18,13 @@ data "aws_ami" "ubuntu_2404" {
   }
 }
 
+data "aws_rds_engine_version" "postgresql_14" {
+  engine                 = "postgres"
+  version                = "14"
+  latest                 = true
+  parameter_group_family = "postgres14"
+}
+
 data "aws_vpc" "my-default" {}
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/route53_zone

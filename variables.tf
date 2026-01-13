@@ -56,6 +56,12 @@ variable "tfe_host_path_to_certificates" {
   default     = "/etc/terraform-enterprise/certs"
 }
 
+variable "tfe_host_path_to_scripts" {
+  description = "The path on the host machine to store tfe data"
+  type        = string
+  default     = "/var/lib/terraform-enterprise/scripts"
+}
+
 variable "lets_encrypt_cert" {
   description = "value"
   type        = string
@@ -81,5 +87,25 @@ variable "tfe_database_name" {
 
 variable "tfe_database_password" {
   description = "The database password of the database name in the RDS instance"
+  type        = string
+}
+
+## Variables for TFE configuration: 
+variable "admin_email" {
+  type    = string
+  default = "admin@example.com"
+}
+
+variable "admin_username" {
+  type    = string
+  default = "admin"
+
+}
+variable "admin_password" {
+  type    = string
+}
+
+variable "oauth_token" {
+  description = "OAuth token for GitHub"
   type        = string
 }
